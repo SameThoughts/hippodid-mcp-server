@@ -1,0 +1,27 @@
+# HippoDid MCP Server Configuration
+#
+# The MCP server runs as a CLI process (no web server).
+# Stdout is reserved for the MCP JSON-RPC protocol — all logging goes to stderr.
+
+spring:
+  main:
+    web-application-type: none
+    banner-mode: off
+
+# HippoDid API connection (auto-configured by hippodid-spring-boot-starter)
+hippodid:
+  api-key: ${HIPPODID_API_KEY:}
+  character-id: ${HIPPODID_CHARACTER_ID:}
+  base-url: ${HIPPODID_BASE_URL:https://api.hippodid.com}
+
+# MCP server settings
+mcp:
+  recall-cache-ttl-seconds: ${MCP_RECALL_CACHE_TTL:120}
+  sync-interval-seconds: ${MCP_SYNC_INTERVAL:300}
+  auto-capture: ${MCP_AUTO_CAPTURE:false}
+  auto-recall: ${MCP_AUTO_RECALL:false}
+
+# Logging — stderr only (stdout is MCP protocol)
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
