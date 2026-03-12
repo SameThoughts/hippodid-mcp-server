@@ -52,7 +52,7 @@ public final class AiConfigToolProvider implements McpToolProvider {
                 },"required":["completionBaseUrl","completionApiKey","completionModel"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("hippodid_configure_ai",
+                new Tool("configure_ai",
                         "Configure tenant BYOK AI providers.", schema),
                 (exchange, args) -> {
                     try {
@@ -77,7 +77,7 @@ public final class AiConfigToolProvider implements McpToolProvider {
 
                         Map<String, Object> response = new LinkedHashMap<>();
                         response.put("status", "configured");
-                        response.put("_status", McpOperationStatus.fallback("hippodid_configure_ai").toMap());
+                        response.put("_status", McpOperationStatus.fallback("configure_ai").toMap());
                         return toJsonResult(response);
                     } catch (HippoDidException e) {
                         return McpToolErrorMapper.toErrorResult(e);
@@ -92,7 +92,7 @@ public final class AiConfigToolProvider implements McpToolProvider {
                 {"type":"object","properties":{}}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("hippodid_test_ai_config",
+                new Tool("test_ai_config",
                         "Test connectivity of saved AI provider configuration.", schema),
                 (exchange, args) -> {
                     try {
@@ -117,7 +117,7 @@ public final class AiConfigToolProvider implements McpToolProvider {
                         result.completionMessage().ifPresent(m -> payload.put("completionMessage", m));
                         result.embeddingStatus().ifPresent(s -> payload.put("embeddingStatus", s));
                         result.embeddingMessage().ifPresent(m -> payload.put("embeddingMessage", m));
-                        payload.put("_status", McpOperationStatus.fallback("hippodid_test_ai_config").toMap());
+                        payload.put("_status", McpOperationStatus.fallback("test_ai_config").toMap());
                         return toJsonResult(payload);
                     } catch (HippoDidException e) {
                         return McpToolErrorMapper.toErrorResult(e);

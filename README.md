@@ -52,8 +52,8 @@ Ask Claude to remember things, search memories, sync files, and more.
 | `add_watch_path` | Sync a file and register the path for background tracking |
 | `list_watch_paths` | List all watched file paths in this session |
 | `force_sync` | Force an immediate sync of all watched paths |
-| `hippodid_configure_ai` | Configure tenant BYOK AI providers |
-| `hippodid_test_ai_config` | Test connectivity of saved AI provider configuration |
+| `configure_ai` | Configure tenant BYOK AI providers |
+| `test_ai_config` | Test connectivity of saved AI provider configuration |
 
 ## Environment Variables
 

@@ -113,11 +113,18 @@ public final class CharacterToolProvider implements McpToolProvider {
     private McpServerFeatures.SyncToolSpecification updateCharacterProfileTool() {
         String schema = """
                 {"type":"object","properties":{
-                  "character_id":{"type":"string","description":"Character UUID"}
+                  "character_id":{"type":"string","description":"Character UUID"},
+                  "system_prompt":{"type":"string","description":"System prompt injected at session start (T1)"},
+                  "personality":{"type":"string","description":"Personality description"},
+                  "background":{"type":"string","description":"Character background / backstory"},
+                  "rules":{"type":"array","items":{"type":"string"},"description":"Behavioral rules the character should follow"},
+                  "custom_fields":{"type":"object","additionalProperties":{"type":"string"},"description":"Arbitrary key-value metadata"}
                 },"required":["character_id"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("update_character_profile", "Update a character's profile.", schema),
+                new Tool("update_character_profile",
+                        "Update a character's profile fields (system prompt, personality, background, rules, custom fields). Requires Starter+ tier.",
+                        schema),
                 (exchange, args) -> McpToolErrorMapper.notImplemented("update_character_profile"));
     }
 
@@ -136,11 +143,14 @@ public final class CharacterToolProvider implements McpToolProvider {
     private McpServerFeatures.SyncToolSpecification resolveAliasTool() {
         String schema = """
                 {"type":"object","properties":{
-                  "alias":{"type":"string","description":"Alias string to resolve"}
+                  "alias":{"type":"string","description":"Alias string to resolve"},
+                  "source_hint":{"type":"string","description":"Optional context hint (e.g. reference text) to improve resolution quality"}
                 },"required":["alias"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("resolve_alias", "Resolve an alias to a character.", schema),
+                new Tool("resolve_alias",
+                        "Resolve an alias to a character. Optionally provide source_hint for better disambiguation.",
+                        schema),
                 (exchange, args) -> McpToolErrorMapper.notImplemented("resolve_alias"));
     }
 
