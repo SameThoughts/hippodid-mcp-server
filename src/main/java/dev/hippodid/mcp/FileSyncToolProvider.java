@@ -87,7 +87,7 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("import_document",
-                        "Import a document and extract memories. Requires Starter+ tier.", schema),
+                        "Import a document and extract memories. Available on all tiers: Free and Starter support up to 50 KB per file; Developer and Business have no size limit.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -193,7 +193,10 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("add_watch_path",
-                        "Sync a file and register the path for tracking.", schema),
+                        "Sync a file and register the path for background tracking. "
+                        + "file_content is required because the MCP server runs via stdio and "
+                        + "cannot read local files directly — the AI client must provide it.",
+                        schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
