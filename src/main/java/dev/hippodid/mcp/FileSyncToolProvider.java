@@ -61,7 +61,13 @@ public final class FileSyncToolProvider implements McpToolProvider {
                 },"required":["character_id","file_path","file_content"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("sync_file", "Sync a local file to the HippoDid cloud.", schema),
+                new Tool("sync_file",
+                        "Upload the current content of a file to HippoDid cloud storage for "
+                        + "this character. Call this when the user wants to persist a file's "
+                        + "state across sessions or devices — memory files, project notes, "
+                        + "configuration. Provide the full file content as a string (stdio "
+                        + "transport cannot read local files directly). For automatic background "
+                        + "tracking, use add_watch_path instead.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -87,7 +93,13 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("import_document",
-                        "Import a document and extract memories. Available on all tiers: Free and Starter support up to 50 KB per file; Developer and Business have no size limit.", schema),
+                        "Extract structured memories from a document and store them in a "
+                        + "character. Use this to onboard existing knowledge — CLAUDE.md files, "
+                        + "project notes, README files, decision logs, or any text document "
+                        + "containing facts worth remembering. HippoDid runs the full AUDN "
+                        + "extraction pipeline on the content. Available on all tiers (Free "
+                        + "and Starter: 50 KB limit; Developer+: unlimited). Provide the full "
+                        + "file content as a string — stdio transport cannot read local files.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -118,7 +130,13 @@ public final class FileSyncToolProvider implements McpToolProvider {
                 },"required":["character_id"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("list_synced_files", "List files synced to the cloud for a character.", schema),
+                new Tool("list_synced_files",
+                        "Show all files stored in HippoDid cloud for a character, "
+                        + "including file size, sync timestamp, and label. Call this "
+                        + "to check what files have been backed up for an agent, or "
+                        + "before syncing to avoid duplicates. Different from "
+                        + "list_watch_paths — this shows cloud-persisted files, not "
+                        + "session-scoped tracking.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -138,7 +156,12 @@ public final class FileSyncToolProvider implements McpToolProvider {
                 },"required":["character_id"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("get_sync_status", "Get sync status summary for a character.", schema),
+                new Tool("get_sync_status",
+                        "Get an overview of this character's file sync state — "
+                        + "total files, total size, last sync time, and any pending "
+                        + "changes. Call this when the user asks whether their files "
+                        + "are backed up, or to diagnose sync issues before running "
+                        + "force_sync.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -166,7 +189,12 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("export_character",
-                        "Export all memories for a character as Markdown.", schema),
+                        "Export the complete memory body of a character as a "
+                        + "structured Markdown document, grouped by category and "
+                        + "sorted by salience. Call this when the user wants a "
+                        + "portable snapshot of what an agent knows — for review, "
+                        + "backup, sharing, or importing into another tool. No AI "
+                        + "ops consumed. Available on all tiers.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -193,9 +221,12 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("add_watch_path",
-                        "Sync a file and register the path for background tracking. "
-                        + "file_content is required because the MCP server runs via stdio and "
-                        + "cannot read local files directly — the AI client must provide it.",
+                        "Register a file for ongoing sync tracking AND upload its current "
+                        + "content. Use this for files that should stay in sync with HippoDid "
+                        + "across sessions — MEMORY.md, CLAUDE.md, project notes. You must "
+                        + "provide the file content because stdio transport cannot read local "
+                        + "files directly. After registering, use force_sync to push updates "
+                        + "and list_watch_paths to see all tracked files.",
                         schema),
                 (exchange, args) -> {
                     try {
@@ -223,7 +254,12 @@ public final class FileSyncToolProvider implements McpToolProvider {
                 {"type":"object","properties":{}}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("list_watch_paths", "List all watched file paths in this session.", schema),
+                new Tool("list_watch_paths",
+                        "Show all files currently registered for sync tracking in this "
+                        + "session. Call this to check which files are being tracked before "
+                        + "adding new paths or running a sync. Note: watch paths are session-"
+                        + "scoped — they reset when the MCP server restarts. Use sync_file "
+                        + "for one-time uploads that persist independently of the session.", schema),
                 (exchange, args) -> {
                     List<Map<String, Object>> entries = watchPathRegistry.listAll().stream()
                             .map(entry -> {
@@ -249,7 +285,11 @@ public final class FileSyncToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("force_sync",
-                        "Force an immediate sync of all watched paths.", schema),
+                        "Immediately sync all watched files to HippoDid cloud without "
+                        + "waiting for the next scheduled sync interval. Call this after "
+                        + "making significant changes to watched files that you want "
+                        + "persisted now, or when the user explicitly asks to save or "
+                        + "back up their memory files.", schema),
                 (exchange, args) -> {
                     // Background watcher uses HTTP sync now — iterate registry
                     List<Map<String, Object>> results = watchPathRegistry.listAll().stream()

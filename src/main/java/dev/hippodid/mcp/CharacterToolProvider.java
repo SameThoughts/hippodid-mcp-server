@@ -55,7 +55,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 },"required":["name"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("create_character", "Create a new character to store memories for.", schema),
+                new Tool("create_character",
+                        "Create a new isolated memory namespace (character) for an agent, persona, "
+                        + "or project. Call this when a user wants to start tracking memory for a new "
+                        + "agent or when no suitable character exists yet. Characters are the top-level "
+                        + "containers — all memories, categories, and file syncs belong to one character. "
+                        + "Use a descriptive name that reflects the agent's role or project scope.", schema),
                 (exchange, args) -> {
                     try {
                         String name = stringArg(args, "name");
@@ -75,7 +80,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 {"type":"object","properties":{}}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("list_characters", "List all characters accessible to you.", schema),
+                new Tool("list_characters",
+                        "List all memory characters (namespaced memory stores) available for this "
+                        + "tenant. Call this when you need to discover which characters exist before "
+                        + "reading or writing memories, or when the user asks what agents or personas "
+                        + "are configured. Each character is an isolated memory namespace — one per "
+                        + "agent, project, persona, or user.", schema),
                 (exchange, args) -> {
                     try {
                         List<CharacterInfo> characters = client.characters().list();
@@ -94,7 +104,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 },"required":["character_id"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("get_character", "Get a character by ID.", schema),
+                new Tool("get_character",
+                        "Retrieve full details for a specific character including memory count, "
+                        + "categories, and profile. Call this when you need to inspect a character's "
+                        + "configuration before working with its memories, or when the user asks about "
+                        + "a specific agent's memory setup. Use list_characters first if you do not "
+                        + "have the character ID.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -114,7 +129,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 },"required":["character_id"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("archive_character", "Soft-delete (archive) a character.", schema),
+                new Tool("archive_character",
+                        "Archive (soft-delete) a character and all its memories. Call this only "
+                        + "when the user explicitly asks to remove or retire an agent or persona. "
+                        + "Archived characters are excluded from list_characters but data is preserved "
+                        + "for recovery. Always confirm with the user before archiving — this affects "
+                        + "all memories stored under this character.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -143,7 +163,12 @@ public final class CharacterToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("update_character_profile",
-                        "Update a character's profile fields (system prompt, personality, background, rules, custom fields). Requires Starter+ tier.",
+                        "Set or update the persistent identity of a character — who they are, "
+                        + "how they behave, and what rules they follow. The system prompt and "
+                        + "personality are injected at every session start (Tier 1 bootstrap), "
+                        + "so this shapes every interaction with this character. Call this when "
+                        + "setting up a new agent persona or when the user wants to change how "
+                        + "an agent behaves. Requires Starter+ tier.",
                         schema),
                 (exchange, args) -> {
                     try {
@@ -177,7 +202,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 },"required":["character_id","aliases"]}""";
 
         return new McpServerFeatures.SyncToolSpecification(
-                new Tool("update_character_aliases", "Replace the alias list for a character.", schema),
+                new Tool("update_character_aliases",
+                        "Set alternative names or references that map to this character. "
+                        + "Call this when users refer to a character by different names across "
+                        + "tools or conversations — e.g. 'my dev agent', 'Claude', 'the coding "
+                        + "assistant'. Aliases enable resolve_alias to find the right character "
+                        + "from natural language references. Requires Starter+ tier.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -200,7 +230,11 @@ public final class CharacterToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("resolve_alias",
-                        "Resolve an alias to a character. Optionally provide source_hint for better disambiguation.",
+                        "Look up which character a natural language reference points to. "
+                        + "Call this when the user refers to an agent by name or nickname and "
+                        + "you need the character ID to read or write memories. Provide "
+                        + "source_hint with surrounding context for better disambiguation when "
+                        + "multiple characters have similar names. Requires Starter+ tier.",
                         schema),
                 (exchange, args) -> {
                     try {

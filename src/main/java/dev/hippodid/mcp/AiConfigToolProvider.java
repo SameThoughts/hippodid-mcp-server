@@ -52,7 +52,13 @@ public final class AiConfigToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("configure_ai",
-                        "Configure tenant BYOK AI providers.", schema),
+                        "Configure the AI provider (model + API key) that HippoDid "
+                        + "uses for memory extraction and search. Call this when "
+                        + "setting up HippoDid for the first time or when the user "
+                        + "wants to switch AI providers. HippoDid is BYOK — it uses "
+                        + "the tenant's own API key for all AI operations. Supports "
+                        + "any OpenAI-compatible endpoint: OpenAI, Anthropic, Gemini, "
+                        + "Ollama, and others. Call test_ai_config after saving.", schema),
                 (exchange, args) -> {
                     try {
                         AiConfigRequest.Builder builder = AiConfigRequest.builder()
@@ -92,7 +98,11 @@ public final class AiConfigToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("test_ai_config",
-                        "Test connectivity of saved AI provider configuration.", schema),
+                        "Verify that the configured AI provider is reachable and "
+                        + "the API key is valid. Call this after configure_ai or when "
+                        + "add_memory / search_memories fail with AI-related errors. "
+                        + "Returns a pass/fail result with the provider's error message "
+                        + "verbatim if the connection fails — actionable, not generic.", schema),
                 (exchange, args) -> {
                     try {
                         AiTestResult result = client.aiConfig().testSaved();

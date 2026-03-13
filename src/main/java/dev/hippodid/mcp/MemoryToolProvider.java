@@ -54,8 +54,12 @@ public final class MemoryToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("add_memory",
-                        "Add a memory via the AUDN pipeline (rule-based salience + dedup). "
-                        + "Content is analyzed and structured memories are extracted.", schema),
+                        "Store information persistently for this agent or user. Call this proactively "
+                        + "when the conversation contains something worth remembering across sessions — "
+                        + "preferences, decisions, facts, project context, constraints, or anything the "
+                        + "user says they want remembered. HippoDid automatically extracts structured "
+                        + "facts, scores their importance, and deduplicates against existing memories. "
+                        + "You do not need to pre-process the content — pass the raw relevant text.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -86,7 +90,12 @@ public final class MemoryToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("add_memory_direct",
-                        "Write a memory directly, bypassing AUDN pipeline. Requires Starter+ tier.", schema),
+                        "Write a specific, pre-formed memory directly without AI extraction. "
+                        + "Use this when you already know exactly what fact to store and at what "
+                        + "importance level — for example, when correcting a wrong memory, storing "
+                        + "a critical architectural decision with high salience, or bulk-loading "
+                        + "known facts. Bypasses the AUDN extraction pipeline. Requires Starter+ "
+                        + "tier. For unstructured text, use add_memory instead.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -117,7 +126,12 @@ public final class MemoryToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("search_memories",
-                        "Hybrid semantic + keyword search across memories for a character.", schema),
+                        "Retrieve relevant memories for the current conversation. Call this at the "
+                        + "start of each session or when context about this agent or user would improve "
+                        + "your response — before answering questions about their preferences, history, "
+                        + "decisions, or ongoing work. Uses hybrid semantic + keyword search with "
+                        + "salience and temporal decay weighting. Returns the most relevant structured "
+                        + "facts, not raw history.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
@@ -173,7 +187,11 @@ public final class MemoryToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("delete_memory",
-                        "Soft-delete a memory. Requires ADMIN or OWNER role.", schema),
+                        "Remove a specific memory that is incorrect, outdated, or no longer "
+                        + "relevant. Call this when the user says something like 'forget that', "
+                        + "'that's wrong', or 'remove what you know about X'. Use search_memories "
+                        + "first to find the memory ID. Soft-delete preserves the record but "
+                        + "removes it from future retrieval. Requires ADMIN or OWNER role.", schema),
                 (exchange, args) -> {
                     try {
                         String charId = stringArg(args, "character_id");
