@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.hippodid.client.HippoDidClient;
 import dev.hippodid.client.HippoDidException;
 import dev.hippodid.client.model.ExportFormat;
-import dev.hippodid.client.model.ImportJob;
+import dev.hippodid.client.model.ImportDocumentResult;
 import dev.hippodid.client.model.SyncStatus;
 import dev.hippodid.client.model.SyncedFile;
 import io.modelcontextprotocol.server.McpServerFeatures;
@@ -94,16 +94,16 @@ public final class FileSyncToolProvider implements McpToolProvider {
                         String fileName = stringArg(args, "file_name");
                         String content = stringArg(args, "file_content");
 
-                        ImportJob job = client.characters(charId).imports()
-                                .start(fileName, content, "auto");
+                        ImportDocumentResult result = client.characters(charId).sync()
+                                .importDocument(fileName, content, "auto");
 
                         Map<String, Object> map = new LinkedHashMap<>();
-                        map.put("totalParsed", job.totalParsed());
-                        map.put("memoriesAdded", job.memoriesAdded());
-                        map.put("duplicatesSkipped", job.duplicatesSkipped());
-                        map.put("fillerFiltered", job.fillerFiltered());
+                        map.put("totalParsed", result.totalParsed());
+                        map.put("memoriesAdded", result.memoriesAdded());
+                        map.put("duplicatesSkipped", result.duplicatesSkipped());
+                        map.put("fillerFiltered", result.fillerFiltered());
                         map.put("_status", McpOperationStatus.forImport(
-                                job.memoriesAdded(), job.totalParsed()).toMap());
+                                result.memoriesAdded(), result.totalParsed()).toMap());
                         return toJsonResult(map);
                     } catch (HippoDidException e) {
                         return McpToolErrorMapper.toErrorResult(e);
