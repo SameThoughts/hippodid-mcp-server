@@ -3,7 +3,6 @@ package dev.hippodid.mcp;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.hippodid.client.HippoDidClient;
 import dev.hippodid.client.HippoDidException;
-import dev.hippodid.client.model.AiConfig;
 import dev.hippodid.client.model.AiConfigRequest;
 import dev.hippodid.client.model.AiTestResult;
 import io.modelcontextprotocol.server.McpServerFeatures;
@@ -96,22 +95,7 @@ public final class AiConfigToolProvider implements McpToolProvider {
                         "Test connectivity of saved AI provider configuration.", schema),
                 (exchange, args) -> {
                     try {
-                        AiConfig config = client.aiConfig().get();
-                        if (!config.configured()) {
-                            return McpToolErrorMapper.toErrorResult("AiNotConfigured",
-                                    "No AI provider is configured");
-                        }
-
-                        // Build a test request from the saved config
-                        // Note: we can't get the actual keys back from get() — use test endpoint
-                        AiConfigRequest request = AiConfigRequest.builder()
-                                .completionBaseUrl("saved")
-                                .completionApiKey("saved")
-                                .completionModel(config.completionModel())
-                                .build();
-
-                        AiTestResult result = client.aiConfig().test(request);
-
+                        AiTestResult result = client.aiConfig().testSaved();
                         Map<String, Object> payload = new LinkedHashMap<>();
                         payload.put("completionStatus", result.completionStatus());
                         result.completionMessage().ifPresent(m -> payload.put("completionMessage", m));
