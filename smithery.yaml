@@ -1,0 +1,36 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+# HippoDid — Persistent cloud memory for AI agents (stdio transport)
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - hippodidApiKey
+    properties:
+      hippodidApiKey:
+        type: string
+        description: >
+          Your HippoDid API key. Get one free at
+          https://app.hippodid.com/settings/api-keys
+      characterId:
+        type: string
+        description: >
+          Default character UUID for background sync. Optional — most tools
+          accept character_id per call.
+      baseUrl:
+        type: string
+        default: "https://api.hippodid.com"
+        description: HippoDid API base URL. Override for self-hosted instances.
+  commandFunction: |-
+    (config) => ({
+      command: 'java',
+      args: ['-jar', 'target/hippodid-mcp-server-1.1.0.jar'],
+      env: {
+        HIPPODID_API_KEY: config.hippodidApiKey,
+        ...(config.characterId ? { HIPPODID_CHARACTER_ID: config.characterId } : {}),
+        ...(config.baseUrl ? { HIPPODID_BASE_URL: config.baseUrl } : {})
+      }
+    })
+  exampleConfig:
+    hippodidApiKey: "hd_your_api_key_here"
