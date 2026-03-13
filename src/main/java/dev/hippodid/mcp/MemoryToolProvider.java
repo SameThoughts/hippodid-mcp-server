@@ -62,10 +62,13 @@ public final class MemoryToolProvider implements McpToolProvider {
                         String content = stringArg(args, "content");
                         recallCache.evictExpired();
 
-                        MemoryInfo mem = client.characters(charId).memories().add(content);
-
-                        McpOperationStatus status = McpOperationStatus.forAddMemory(1, List.of(mem.category()));
-                        return toResultWithStatus(mem, status);
+                        List<MemoryInfo> memories = client.characters(charId).memories().add(content);
+                        List<String> categories = memories.stream()
+                                .map(MemoryInfo::category)
+                                .distinct()
+                                .toList();
+                        McpOperationStatus status = McpOperationStatus.forAddMemory(memories.size(), categories);
+                        return toListResultWithStatus(memories, status);
                     } catch (HippoDidException e) {
                         return McpToolErrorMapper.toErrorResult(e);
                     }
@@ -172,13 +175,46 @@ public final class MemoryToolProvider implements McpToolProvider {
                 new Tool("delete_memory",
                         "Soft-delete a memory. Requires ADMIN or OWNER role.", schema),
                 (exchange, args) -> {
-                    // Note: delete is not yet in the starter — return not-implemented
-                    // until the REST API exposes DELETE /v1/characters/{id}/memories/{memId}
-                    return McpToolErrorMapper.notImplemented("delete_memory");
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        String memoryId = stringArg(args, "memory_id");
+                        recallCache.clear();
+                        client.characters().deleteMemory(charId, memoryId);
+                        McpOperationStatus status = McpOperationStatus.forDelete("memory");
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        map.put("result", "Memory " + memoryId + " deleted");
+                        map.put("_status", status.toMap());
+                        return toJsonResult(map);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
                 });
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
+
+    private CallToolResult toListResultWithStatus(List<?> items, McpOperationStatus status) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("results", items);
+        map.put("_status", status.toMap());
+        try {
+            String json = objectMapper.writeValueAsString(map);
+            return new CallToolResult(List.of(new TextContent(json)), false);
+        } catch (Exception e) {
+            log.warn("Serialization failed", e);
+            return McpToolErrorMapper.toErrorResult("SerializationError", e.getMessage());
+        }
+    }
+
+    private CallToolResult toJsonResult(Object value) {
+        try {
+            String json = objectMapper.writeValueAsString(value);
+            return new CallToolResult(List.of(new TextContent(json)), false);
+        } catch (Exception e) {
+            log.warn("Serialization failed", e);
+            return McpToolErrorMapper.toErrorResult("SerializationError", e.getMessage());
+        }
+    }
 
     private CallToolResult toResultWithStatus(Object payload, McpOperationStatus status) {
         try {

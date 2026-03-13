@@ -20,9 +20,8 @@ import java.util.Optional;
 /**
  * Provides character-management MCP tools backed by the HippoDid REST API.
  *
- * <p>Tools: create_character, list_characters.
- * Note: get_character, archive, update_profile, update_aliases, resolve_alias
- * require additional REST endpoints not yet covered by the starter — marked not-implemented.
+ * <p>Tools: create_character, list_characters, get_character, archive_character,
+ * update_character_profile, update_character_aliases, resolve_alias.
  */
 public final class CharacterToolProvider implements McpToolProvider {
 
@@ -96,7 +95,16 @@ public final class CharacterToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("get_character", "Get a character by ID.", schema),
-                (exchange, args) -> McpToolErrorMapper.notImplemented("get_character"));
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        CharacterInfo character = client.characters().get(charId);
+                        McpOperationStatus status = McpOperationStatus.fallback("get_character");
+                        return toResultWithStatus(character, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
     }
 
     private McpServerFeatures.SyncToolSpecification archiveCharacterTool() {
@@ -107,7 +115,19 @@ public final class CharacterToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("archive_character", "Soft-delete (archive) a character.", schema),
-                (exchange, args) -> McpToolErrorMapper.notImplemented("archive_character"));
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        client.characters().archive(charId);
+                        McpOperationStatus status = McpOperationStatus.forDelete("character");
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        map.put("result", "Character archived");
+                        map.put("_status", status.toMap());
+                        return toJsonResult(map);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
     }
 
     private McpServerFeatures.SyncToolSpecification updateCharacterProfileTool() {
@@ -125,7 +145,28 @@ public final class CharacterToolProvider implements McpToolProvider {
                 new Tool("update_character_profile",
                         "Update a character's profile fields (system prompt, personality, background, rules, custom fields). Requires Starter+ tier.",
                         schema),
-                (exchange, args) -> McpToolErrorMapper.notImplemented("update_character_profile"));
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        Map<String, Object> profile = new LinkedHashMap<>();
+                        optionalStringArg(args, "system_prompt").ifPresent(v -> profile.put("systemPrompt", v));
+                        optionalStringArg(args, "personality").ifPresent(v -> profile.put("personality", v));
+                        optionalStringArg(args, "background").ifPresent(v -> profile.put("background", v));
+                        Object rules = args.get("rules");
+                        if (rules instanceof List<?> ruleList) {
+                            profile.put("rules", ruleList);
+                        }
+                        Object customFields = args.get("custom_fields");
+                        if (customFields instanceof Map<?, ?> cfMap) {
+                            profile.put("customFields", cfMap);
+                        }
+                        CharacterInfo character = client.characters().updateProfile(charId, profile);
+                        McpOperationStatus status = McpOperationStatus.fallback("update_character_profile");
+                        return toResultWithStatus(character, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
     }
 
     private McpServerFeatures.SyncToolSpecification updateCharacterAliasesTool() {
@@ -137,7 +178,17 @@ public final class CharacterToolProvider implements McpToolProvider {
 
         return new McpServerFeatures.SyncToolSpecification(
                 new Tool("update_character_aliases", "Replace the alias list for a character.", schema),
-                (exchange, args) -> McpToolErrorMapper.notImplemented("update_character_aliases"));
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        List<String> aliases = parseStringList(args.get("aliases"));
+                        CharacterInfo character = client.characters().updateAliases(charId, aliases);
+                        McpOperationStatus status = McpOperationStatus.fallback("update_character_aliases");
+                        return toResultWithStatus(character, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
     }
 
     private McpServerFeatures.SyncToolSpecification resolveAliasTool() {
@@ -151,7 +202,16 @@ public final class CharacterToolProvider implements McpToolProvider {
                 new Tool("resolve_alias",
                         "Resolve an alias to a character. Optionally provide source_hint for better disambiguation.",
                         schema),
-                (exchange, args) -> McpToolErrorMapper.notImplemented("resolve_alias"));
+                (exchange, args) -> {
+                    try {
+                        String alias = stringArg(args, "alias");
+                        CharacterInfo character = client.characters().resolve(alias);
+                        McpOperationStatus status = McpOperationStatus.fallback("resolve_alias");
+                        return toResultWithStatus(character, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -190,5 +250,26 @@ public final class CharacterToolProvider implements McpToolProvider {
     private static Optional<String> optionalStringArg(Map<String, Object> args, String key) {
         Object val = args.get(key);
         return val != null && !val.toString().isBlank() ? Optional.of(val.toString()) : Optional.empty();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> parseStringList(Object raw) {
+        if (raw instanceof List<?> list) {
+            return list.stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .toList();
+        }
+        return List.of();
+    }
+
+    private CallToolResult toJsonResult(Object value) {
+        try {
+            String json = objectMapper.writeValueAsString(value);
+            return new CallToolResult(List.of(new TextContent(json)), false);
+        } catch (Exception e) {
+            log.warn("Serialization failed", e);
+            return McpToolErrorMapper.toErrorResult("SerializationError", e.getMessage());
+        }
     }
 }
