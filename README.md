@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.snowmanjy/hippodid-mcp-server -->
 # HippoDid MCP Server
 
 MCP (Model Context Protocol) server for [HippoDid](https://hippodid.com) — connects Claude Desktop (and other MCP clients) to your HippoDid AI character memory.
