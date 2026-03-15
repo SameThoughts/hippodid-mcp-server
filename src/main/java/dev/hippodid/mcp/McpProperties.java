@@ -20,6 +20,7 @@ public class McpProperties {
     private int syncIntervalSeconds = 300;
     private boolean autoCapture;
     private boolean autoRecall;
+    private int recallTopK = 15;
 
     public record WatchPathConfig(String path, String label) {}
 
@@ -40,6 +41,9 @@ public class McpProperties {
 
     public boolean isAutoRecall() { return autoRecall; }
     public void setAutoRecall(boolean val) { this.autoRecall = val; }
+
+    public int getRecallTopK() { return recallTopK; }
+    public void setRecallTopK(int val) { this.recallTopK = val; }
 
     public int effectiveRecallCacheTtlSeconds() {
         return recallCacheTtlSeconds > 0 ? recallCacheTtlSeconds : 120;

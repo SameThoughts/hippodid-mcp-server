@@ -83,6 +83,9 @@ public class McpServerRunner implements CommandLineRunner {
         log.info("MCP auth OK — tier={}", tierInfo.tier());
 
         String characterId = System.getenv("HIPPODID_CHARACTER_ID");
+        if (characterId == null || characterId.isBlank()) {
+            characterId = System.getenv("HIPPODID_MCP_CHARACTER_ID");
+        }
 
         // Step 2: Build tool providers
         RecallCache<String> recallCache = new RecallCache<>(mcpProperties.effectiveRecallCacheTtlSeconds());
@@ -167,16 +170,32 @@ public class McpServerRunner implements CommandLineRunner {
 
         log.info("Registering {} MCP tools", allTools.size());
 
+        // Step 4b: Build memory context resource for auto-recall
+        List<McpServerFeatures.SyncResourceSpecification> resources = new ArrayList<>();
+        int recallTopK = mcpProperties.getRecallTopK();
+        if (characterId != null && !characterId.isBlank()) {
+            MemoryContextResourceProvider resourceProvider =
+                    new MemoryContextResourceProvider(client, characterId, recallTopK);
+            resources.addAll(resourceProvider.resources());
+            log.info("[HippoDid] Auto-recall resource registered for character {}", characterId);
+        }
+
         // Step 5: Build MCP server with stdio transport
         StdioServerTransportProvider transport = new StdioServerTransportProvider(objectMapper);
 
-        McpSyncServer mcpServer = McpServer.sync(transport)
+        var serverBuilder = McpServer.sync(transport)
                 .serverInfo("hippodid-mcp-server", "1.1.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
+                        .resources(false, false)
                         .build())
-                .tools(allTools)
-                .build();
+                .tools(allTools);
+
+        if (!resources.isEmpty()) {
+            serverBuilder = serverBuilder.resources(resources);
+        }
+
+        McpSyncServer mcpServer = serverBuilder.build();
 
         session = new McpSession(mcpServer, captureBuffer, engineController, lifecycleHook, compactionHook);
         log.info("HippoDid MCP server started with {} tools — listening on stdio", allTools.size());
