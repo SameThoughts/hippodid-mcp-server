@@ -1,6 +1,7 @@
 package dev.hippodid.mcp;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.hippodid.autoconfigure.HippoDidProperties;
 import dev.hippodid.client.HippoDidClient;
 import dev.hippodid.client.HippoDidException;
 import dev.hippodid.client.model.TierInfo;
@@ -43,6 +44,7 @@ public class McpServerRunner implements CommandLineRunner {
 
     private final HippoDidClient client;
     private final McpProperties mcpProperties;
+    private final HippoDidProperties hippoDidProperties;
     private final ObjectMapper objectMapper;
 
     private record McpSession(
@@ -56,9 +58,11 @@ public class McpServerRunner implements CommandLineRunner {
 
     public McpServerRunner(HippoDidClient client,
                             McpProperties mcpProperties,
+                            HippoDidProperties hippoDidProperties,
                             ObjectMapper objectMapper) {
         this.client = client;
         this.mcpProperties = mcpProperties;
+        this.hippoDidProperties = hippoDidProperties;
         this.objectMapper = objectMapper;
     }
 
@@ -170,14 +174,18 @@ public class McpServerRunner implements CommandLineRunner {
 
         log.info("Registering {} MCP tools", allTools.size());
 
-        // Step 4b: Build memory context resource for auto-recall
-        List<McpServerFeatures.SyncResourceSpecification> resources = new ArrayList<>();
-        int recallTopK = mcpProperties.getRecallTopK();
+        // Step 4b: Build auto-recall instructions (memories + character profile)
+        Optional<String> instructions = Optional.empty();
         if (characterId != null && !characterId.isBlank()) {
-            MemoryContextResourceProvider resourceProvider =
-                    new MemoryContextResourceProvider(client, characterId, recallTopK);
-            resources.addAll(resourceProvider.resources());
-            log.info("[HippoDid] Auto-recall resource registered for character {}", characterId);
+            InstructionsBuilder instructionsBuilder = new InstructionsBuilder(
+                    client, hippoDidProperties.getBaseUrl(), hippoDidProperties.getApiKey(),
+                    characterId, mcpProperties.getRecallTopK());
+            instructions = instructionsBuilder.build();
+            instructions.ifPresentOrElse(
+                    text -> log.info("[HippoDid] Auto-recall: {} chars injected via instructions",
+                            text.length()),
+                    () -> log.warn("[HippoDid] Auto-recall: failed to build instructions, "
+                            + "continuing without"));
         }
 
         // Step 5: Build MCP server with stdio transport
@@ -187,13 +195,10 @@ public class McpServerRunner implements CommandLineRunner {
                 .serverInfo("hippodid-mcp-server", "1.1.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
-                        .resources(false, false)
                         .build())
                 .tools(allTools);
 
-        if (!resources.isEmpty()) {
-            serverBuilder = serverBuilder.resources(resources);
-        }
+        instructions.ifPresent(serverBuilder::instructions);
 
         McpSyncServer mcpServer = serverBuilder.build();
 
