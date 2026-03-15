@@ -14,6 +14,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "mcp")
 public class McpProperties {
 
+    private String mode = "stdio";
     private int recallCacheTtlSeconds = 120;
     private List<WatchPathConfig> watchPaths;
     private List<WatchPathConfig> additionalPaths;
@@ -21,6 +22,9 @@ public class McpProperties {
     private boolean autoCapture;
     private boolean autoRecall;
     private int recallTopK = 15;
+
+    public String getMode() { return mode; }
+    public void setMode(String val) { this.mode = val; }
 
     public record WatchPathConfig(String path, String label) {}
 

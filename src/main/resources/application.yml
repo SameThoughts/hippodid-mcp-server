@@ -16,6 +16,7 @@ hippodid:
 
 # MCP server settings
 mcp:
+  mode: ${HIPPODID_MCP_MODE:stdio}
   recall-cache-ttl-seconds: ${MCP_RECALL_CACHE_TTL:120}
   sync-interval-seconds: ${MCP_SYNC_INTERVAL:300}
   auto-capture: ${MCP_AUTO_CAPTURE:false}

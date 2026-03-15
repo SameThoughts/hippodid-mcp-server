@@ -17,6 +17,7 @@ import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
@@ -38,6 +39,7 @@ import java.util.Optional;
  * <p>Stdout is reserved for the MCP JSON-RPC protocol. All logging must go to stderr.
  */
 @Component
+@ConditionalOnProperty(name = "mcp.mode", havingValue = "stdio", matchIfMissing = true)
 public class McpServerRunner implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(McpServerRunner.class);
