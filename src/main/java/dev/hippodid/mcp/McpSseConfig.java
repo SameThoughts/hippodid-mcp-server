@@ -15,12 +15,15 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -35,19 +38,23 @@ import java.util.Optional;
  * <p>Auth: Bearer token on every request, validated against {@code HIPPODID_API_KEY}.
  */
 @Configuration
+@EnableScheduling
 @ConditionalOnProperty(name = "mcp.mode", havingValue = "sse")
 public class McpSseConfig {
 
     private static final Logger log = LoggerFactory.getLogger(McpSseConfig.class);
 
+    private volatile HttpServletSseServerTransportProvider transport;
+
     @Bean
     public HttpServletSseServerTransportProvider sseTransport(ObjectMapper objectMapper) {
-        return HttpServletSseServerTransportProvider.builder()
+        this.transport = HttpServletSseServerTransportProvider.builder()
                 .objectMapper(objectMapper)
                 .baseUrl("/mcp")
                 .messageEndpoint("/message")
                 .sseEndpoint("/sse")
                 .build();
+        return this.transport;
     }
 
     @Bean
@@ -126,7 +133,7 @@ public class McpSseConfig {
         }
 
         var serverBuilder = McpServer.sync(transport)
-                .serverInfo("hippodid-mcp-server", "1.1.0")
+                .serverInfo("hippodid-mcp-server", "2.0.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
                         .build())
@@ -137,6 +144,25 @@ public class McpSseConfig {
         McpSyncServer server = serverBuilder.build();
         log.info("HippoDid MCP SSE server started — listening on /mcp/sse");
         return server;
+    }
+
+    /**
+     * SSE keepalive — sends a lightweight MCP logging notification every 15 seconds.
+     *
+     * <p>The SDK does not expose raw SSE comment writing ({@code : ping\n\n}).
+     * {@code notifyClients} sends a JSON-RPC notification to all sessions,
+     * which keeps load balancers and proxies from closing idle connections.
+     */
+    @Scheduled(fixedRate = 15_000, initialDelay = 15_000)
+    public void keepalive() {
+        if (transport == null) return;
+        transport.notifyClients("notifications/message", Map.of(
+                "level", "debug",
+                "logger", "system",
+                "data", "keepalive"))
+                .subscribe(
+                        unused -> {},
+                        err -> log.debug("Keepalive send failed: {}", err.getMessage()));
     }
 
     private static String resolveCharacterId() {

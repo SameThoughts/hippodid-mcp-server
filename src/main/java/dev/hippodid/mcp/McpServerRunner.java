@@ -194,7 +194,7 @@ public class McpServerRunner implements CommandLineRunner {
         StdioServerTransportProvider transport = new StdioServerTransportProvider(objectMapper);
 
         var serverBuilder = McpServer.sync(transport)
-                .serverInfo("hippodid-mcp-server", "1.1.0")
+                .serverInfo("hippodid-mcp-server", "2.0.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
                         .build())
