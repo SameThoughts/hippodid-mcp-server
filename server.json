@@ -8,13 +8,13 @@
     "source": "github"
   },
   "websiteUrl": "https://hippodid.com",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/SameThoughts/hippodid-mcp-server/releases/download/v1.1.0/hippodid-mcp-server-1.1.0.jar",
-      "version": "1.1.0",
-      "fileSha256": "b246c0d66aa9f6101f54bdca36d5175dc56f959fb170bfcc9b58764af5314f1c",
+      "identifier": "https://github.com/SameThoughts/hippodid-mcp-server/releases/download/v2.0.0/hippodid-mcp-server-2.0.0.jar",
+      "version": "2.0.0",
+      "fileSha256": "7262570496758dad65af4cd9aac946fe0a2c9b67dc1bb6c3c7b842f3bdd12836",
       "transport": {
         "type": "stdio"
       },
@@ -25,7 +25,7 @@
         },
         {
           "type": "positional",
-          "value": "hippodid-mcp-server-1.1.0.jar"
+          "value": "hippodid-mcp-server-2.0.0.jar"
         }
       ],
       "environmentVariables": [
@@ -42,6 +42,16 @@
         {
           "name": "HIPPODID_BASE_URL",
           "description": "API base URL (default: https://api.hippodid.com)",
+          "required": false
+        },
+        {
+          "name": "HIPPODID_MCP_MODE",
+          "description": "Transport mode: stdio (default) or sse",
+          "required": false
+        },
+        {
+          "name": "HIPPODID_MCP_SSE_PORT",
+          "description": "HTTP port for SSE mode (default: 8090)",
           "required": false
         }
       ]
