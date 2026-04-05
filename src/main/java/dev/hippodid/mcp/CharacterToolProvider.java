@@ -44,7 +44,12 @@ public final class CharacterToolProvider implements McpToolProvider {
                 archiveCharacterTool(),
                 updateCharacterProfileTool(),
                 updateCharacterAliasesTool(),
-                resolveAliasTool());
+                resolveAliasTool(),
+                cloneCharacterTool(),
+                setAgentConfigTool(),
+                getAgentConfigTool(),
+                setMemoryModeTool(),
+                askWithAgentConfigTool());
     }
 
     private McpServerFeatures.SyncToolSpecification createCharacterTool() {
@@ -248,6 +253,176 @@ public final class CharacterToolProvider implements McpToolProvider {
                 });
     }
 
+    private McpServerFeatures.SyncToolSpecification cloneCharacterTool() {
+        String schema = """
+                {"type":"object","properties":{
+                  "character_id":{"type":"string","description":"Source character UUID to clone"},
+                  "name":{"type":"string","description":"Name for the cloned character"},
+                  "external_id":{"type":"string","description":"Optional external ID for the clone"},
+                  "copy_memories":{"type":"boolean","description":"Deep-copy all memories to the clone (default: false)"},
+                  "copy_tags":{"type":"boolean","description":"Copy tags to the clone (default: true)"}
+                },"required":["character_id","name"]}""";
+
+        return new McpServerFeatures.SyncToolSpecification(
+                new Tool("clone_character",
+                        "Deep clone a character — copies profile, categories, agent config, "
+                        + "and optionally all memories and tags. Use this to create parallel "
+                        + "agent instances, A/B test different configurations, or fork a "
+                        + "character for a new use case. Requires Developer+ tier. Set "
+                        + "copy_memories=true to include all stored memories (may be slow "
+                        + "for large memory sets).", schema),
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        String name = stringArg(args, "name");
+                        String externalId = optionalStringArg(args, "external_id").orElse(null);
+                        Boolean copyTags = booleanArgOrNull(args, "copy_tags");
+                        Boolean copyMemories = booleanArgOrNull(args, "copy_memories");
+
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> result = client.characters().clone(
+                                charId, name, externalId, copyTags, copyMemories, null);
+
+                        McpOperationStatus status = McpOperationStatus.fallback("clone_character");
+                        return toResultWithStatus(result, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
+    }
+
+    private McpServerFeatures.SyncToolSpecification setAgentConfigTool() {
+        String schema = """
+                {"type":"object","properties":{
+                  "character_id":{"type":"string","description":"Character UUID"},
+                  "system_prompt":{"type":"string","description":"System prompt for the LLM when this character answers questions"},
+                  "preferred_model":{"type":"string","description":"Model name (e.g. claude-sonnet-4-20250514, gpt-4o)"},
+                  "temperature":{"type":"number","description":"Temperature 0.0-2.0 (default 0.7)"},
+                  "max_tokens":{"type":"integer","description":"Max response tokens (default 2048)"},
+                  "tools":{"type":"array","items":{"type":"string"},"description":"Enabled tool names"},
+                  "response_format":{"type":"string","enum":["TEXT","JSON","MARKDOWN"],"description":"Response format"}
+                },"required":["character_id"]}""";
+
+        return new McpServerFeatures.SyncToolSpecification(
+                new Tool("set_agent_config",
+                        "Set the LLM behavior configuration for a character — system prompt, "
+                        + "model, temperature, tools, and response format. This config is "
+                        + "applied when using ask_with_agent_config and is preserved across "
+                        + "clones. Call this when setting up how a character should behave "
+                        + "when answering questions via the RAG pipeline.", schema),
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        Map<String, Object> config = new LinkedHashMap<>();
+                        optionalStringArg(args, "system_prompt").ifPresent(v -> config.put("systemPrompt", v));
+                        optionalStringArg(args, "preferred_model").ifPresent(v -> config.put("preferredModel", v));
+                        optionalDoubleArg(args, "temperature").ifPresent(v -> config.put("temperature", v));
+                        optionalIntArg(args, "max_tokens").ifPresent(v -> config.put("maxTokens", v));
+                        Object tools = args.get("tools");
+                        if (tools instanceof List<?> toolList) {
+                            config.put("tools", toolList);
+                        }
+                        optionalStringArg(args, "response_format").ifPresent(v -> config.put("responseFormat", v));
+
+                        Map<String, Object> result = client.characters().setAgentConfig(charId, config);
+                        McpOperationStatus status = McpOperationStatus.fallback("set_agent_config");
+                        return toResultWithStatus(result, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
+    }
+
+    private McpServerFeatures.SyncToolSpecification getAgentConfigTool() {
+        String schema = """
+                {"type":"object","properties":{
+                  "character_id":{"type":"string","description":"Character UUID"}
+                },"required":["character_id"]}""";
+
+        return new McpServerFeatures.SyncToolSpecification(
+                new Tool("get_agent_config",
+                        "Get the stored agent configuration for a character. Returns the "
+                        + "system prompt, model, temperature, tools, and response format — "
+                        + "or null if no config is set. Call this to inspect a character's "
+                        + "behavior settings before modifying them.", schema),
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        Map<String, Object> result = client.characters().getAgentConfig(charId);
+                        McpOperationStatus status = McpOperationStatus.fallback("get_agent_config");
+                        return toResultWithStatus(result, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
+    }
+
+    private McpServerFeatures.SyncToolSpecification setMemoryModeTool() {
+        String schema = """
+                {"type":"object","properties":{
+                  "character_id":{"type":"string","description":"Character UUID"},
+                  "mode":{"type":"string","enum":["EXTRACTED","VERBATIM","HYBRID"],
+                    "description":"Memory ingestion mode"}
+                },"required":["character_id","mode"]}""";
+
+        return new McpServerFeatures.SyncToolSpecification(
+                new Tool("set_memory_mode",
+                        "Set how add_memory processes content for a character. "
+                        + "EXTRACTED (default): AI extracts structured facts via AUDN pipeline — "
+                        + "requires BYOK AI config. Best for general knowledge management. "
+                        + "VERBATIM: Store exact content as-is, no AI processing, zero LLM cost. "
+                        + "Best for chat logs, support tickets, compliance records. "
+                        + "HYBRID: Both extraction and verbatim archive (Business+ tier only).",
+                        schema),
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        String mode = stringArg(args, "mode");
+
+                        // Use the update endpoint with memoryMode — need current name
+                        CharacterInfo character = client.characters().get(charId);
+                        CharacterInfo updated = client.characters().update(
+                                charId, character.name(), character.description(), mode);
+
+                        McpOperationStatus status = McpOperationStatus.fallback("set_memory_mode");
+                        return toResultWithStatus(updated, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
+    }
+
+    private McpServerFeatures.SyncToolSpecification askWithAgentConfigTool() {
+        String schema = """
+                {"type":"object","properties":{
+                  "character_id":{"type":"string","description":"Character UUID"},
+                  "message":{"type":"string","description":"Question or message to send"}
+                },"required":["character_id","message"]}""";
+
+        return new McpServerFeatures.SyncToolSpecification(
+                new Tool("ask_with_agent_config",
+                        "Ask a question and get an answer powered by the character's memories "
+                        + "and stored agent config (system prompt, model, temperature). Uses "
+                        + "RAG — retrieves relevant memories, then generates an answer with "
+                        + "citations. Requires Developer+ tier and tenant BYOK AI config. "
+                        + "The character must have an agent config set via set_agent_config.",
+                        schema),
+                (exchange, args) -> {
+                    try {
+                        String charId = stringArg(args, "character_id");
+                        String message = stringArg(args, "message");
+
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> result = client.characters().ask(charId, message, true);
+
+                        McpOperationStatus status = McpOperationStatus.fallback("ask_with_agent_config");
+                        return toResultWithStatus(result, status);
+                    } catch (HippoDidException e) {
+                        return McpToolErrorMapper.toErrorResult(e);
+                    }
+                });
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private CallToolResult toResultWithStatus(Object payload, McpOperationStatus status) {
@@ -284,6 +459,30 @@ public final class CharacterToolProvider implements McpToolProvider {
     private static Optional<String> optionalStringArg(Map<String, Object> args, String key) {
         Object val = args.get(key);
         return val != null && !val.toString().isBlank() ? Optional.of(val.toString()) : Optional.empty();
+    }
+
+    private static Boolean booleanArgOrNull(Map<String, Object> args, String key) {
+        Object val = args.get(key);
+        if (val == null) return null;
+        if (val instanceof Boolean b) return b;
+        if (val instanceof String s) return Boolean.parseBoolean(s);
+        return null;
+    }
+
+    private static Optional<Double> optionalDoubleArg(Map<String, Object> args, String key) {
+        Object val = args.get(key);
+        if (val == null) return Optional.empty();
+        if (val instanceof Number n) return Optional.of(n.doubleValue());
+        try { return Optional.of(Double.parseDouble(val.toString())); }
+        catch (NumberFormatException e) { return Optional.empty(); }
+    }
+
+    private static Optional<Integer> optionalIntArg(Map<String, Object> args, String key) {
+        Object val = args.get(key);
+        if (val == null) return Optional.empty();
+        if (val instanceof Number n) return Optional.of(n.intValue());
+        try { return Optional.of(Integer.parseInt(val.toString())); }
+        catch (NumberFormatException e) { return Optional.empty(); }
     }
 
     @SuppressWarnings("unchecked")

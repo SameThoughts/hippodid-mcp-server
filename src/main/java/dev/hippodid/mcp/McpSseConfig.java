@@ -100,6 +100,10 @@ public class McpSseConfig {
         CharacterToolProvider characterToolProvider = new CharacterToolProvider(client, objectMapper);
         MemoryToolProvider memoryToolProvider = new MemoryToolProvider(client, recallCache, objectMapper);
         AiConfigToolProvider aiConfigToolProvider = new AiConfigToolProvider(client, objectMapper);
+        TemplateToolProvider templateToolProvider = new TemplateToolProvider(client, objectMapper);
+        BatchToolProvider batchToolProvider = new BatchToolProvider(client, objectMapper);
+        AgentConfigTemplateToolProvider agentConfigTemplateToolProvider =
+                new AgentConfigTemplateToolProvider(client, objectMapper);
 
         WatchPathRegistry watchPathRegistry = new WatchPathRegistry();
         mcpProperties.effectiveWatchPaths().forEach(cfg ->
@@ -116,6 +120,9 @@ public class McpSseConfig {
         allTools.addAll(memoryToolProvider.tools());
         allTools.addAll(fileSyncToolProvider.tools());
         allTools.addAll(aiConfigToolProvider.tools());
+        allTools.addAll(templateToolProvider.tools());
+        allTools.addAll(batchToolProvider.tools());
+        allTools.addAll(agentConfigTemplateToolProvider.tools());
 
         log.info("SSE mode — registering {} MCP tools", allTools.size());
 
@@ -133,7 +140,7 @@ public class McpSseConfig {
         }
 
         var serverBuilder = McpServer.sync(transport)
-                .serverInfo("hippodid-mcp-server", "2.0.0")
+                .serverInfo("hippodid-mcp-server", "2.1.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
                         .build())

@@ -1,7 +1,30 @@
 <!-- mcp-name: io.github.snowmanjy/hippodid-mcp-server -->
+
+<p align="center">
+  <img src="docs/assets/hippodid-hero.png" alt="HippoDid MCP Server — persistent cloud memory for AI agents" width="780" />
+</p>
+
+<p align="center">
+  <strong>HippoDid MCP Server</strong><br/>
+  Persistent, portable memory for AI agents. Your AI forgets everything between sessions. HippoDid remembers.
+</p>
+
+---
+
 # HippoDid MCP Server
 
-MCP (Model Context Protocol) server for [HippoDid](https://hippodid.com) — connects Claude Desktop (and other MCP clients) to your HippoDid AI character memory.
+MCP (Model Context Protocol) server for [HippoDid](https://hippodid.com) — connects Claude Code, Claude Desktop, ChatGPT, Gemini CLI, Codex CLI, Cursor, and any MCP-compatible client to persistent AI character memory.
+
+## What is HippoDid?
+
+HippoDid is a cloud memory infrastructure for AI agents. It stores structured memories (preferences, decisions, skills, relationships) in a searchable database and retrieves them across sessions, tools, and AI providers. Write a memory in Claude Code, recall it in ChatGPT. Switch from Cursor to Gemini — your agent's memory travels with it.
+
+Key features:
+- **Cross-platform memory** — same memories accessible from any MCP client or ChatGPT via OAuth
+- **Structured extraction** — raw text is automatically parsed into categorized facts with salience scores
+- **Temporal decay** — memories fade naturally by category (skills are evergreen, events fade in 14 days)
+- **Character scoping** — each agent/project gets its own memory namespace
+- **BYOK AI** — bring your own OpenAI, Anthropic, or Gemini key for extraction
 
 ## Quick Start
 

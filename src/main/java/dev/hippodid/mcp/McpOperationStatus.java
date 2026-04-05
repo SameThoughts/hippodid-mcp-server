@@ -79,6 +79,16 @@ public record McpOperationStatus(
                 "Found " + count + " character" + (count == 1 ? "" : "s"));
     }
 
+    public static McpOperationStatus forBatchCreate(int rowCount) {
+        return new McpOperationStatus("batch_create_characters", 0, 0, 0, 0, List.of(),
+                "Batch job started with " + rowCount + " row" + (rowCount == 1 ? "" : "s"));
+    }
+
+    public static McpOperationStatus forCloneCharacter(String name) {
+        return new McpOperationStatus("clone_character", 0, 0, 0, 0, List.of(),
+                "Cloned character as '" + name + "'");
+    }
+
     public static McpOperationStatus fallback(String operation) {
         return new McpOperationStatus(operation, 0, 0, 0, 0, List.of(), operation + " completed");
     }

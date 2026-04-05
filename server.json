@@ -8,12 +8,12 @@
     "source": "github"
   },
   "websiteUrl": "https://hippodid.com",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "packages": [
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/SameThoughts/hippodid-mcp-server/releases/download/v2.0.0/hippodid-mcp-server-2.0.0.jar",
-      "version": "2.0.0",
+      "identifier": "https://github.com/SameThoughts/hippodid-mcp-server/releases/download/v2.0.0/hippodid-mcp-server-2.1.0.jar",
+      "version": "2.1.0",
       "fileSha256": "7262570496758dad65af4cd9aac946fe0a2c9b67dc1bb6c3c7b842f3bdd12836",
       "transport": {
         "type": "stdio"
@@ -25,7 +25,7 @@
         },
         {
           "type": "positional",
-          "value": "hippodid-mcp-server-2.0.0.jar"
+          "value": "hippodid-mcp-server-2.1.0.jar"
         }
       ],
       "environmentVariables": [

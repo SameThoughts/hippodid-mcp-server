@@ -101,6 +101,10 @@ public class McpServerRunner implements CommandLineRunner {
         CharacterToolProvider characterToolProvider = new CharacterToolProvider(client, objectMapper);
         MemoryToolProvider memoryToolProvider = new MemoryToolProvider(client, recallCache, objectMapper);
         AiConfigToolProvider aiConfigToolProvider = new AiConfigToolProvider(client, objectMapper);
+        TemplateToolProvider templateToolProvider = new TemplateToolProvider(client, objectMapper);
+        BatchToolProvider batchToolProvider = new BatchToolProvider(client, objectMapper);
+        AgentConfigTemplateToolProvider agentConfigTemplateToolProvider =
+                new AgentConfigTemplateToolProvider(client, objectMapper);
 
         // Step 3: Create WatchPathRegistry and pre-populate from config
         WatchPathRegistry watchPathRegistry = new WatchPathRegistry();
@@ -173,6 +177,9 @@ public class McpServerRunner implements CommandLineRunner {
         allTools.addAll(memoryToolProvider.tools());
         allTools.addAll(fileSyncToolProvider.tools());
         allTools.addAll(aiConfigToolProvider.tools());
+        allTools.addAll(templateToolProvider.tools());
+        allTools.addAll(batchToolProvider.tools());
+        allTools.addAll(agentConfigTemplateToolProvider.tools());
 
         log.info("Registering {} MCP tools", allTools.size());
 
@@ -194,7 +201,7 @@ public class McpServerRunner implements CommandLineRunner {
         StdioServerTransportProvider transport = new StdioServerTransportProvider(objectMapper);
 
         var serverBuilder = McpServer.sync(transport)
-                .serverInfo("hippodid-mcp-server", "2.0.0")
+                .serverInfo("hippodid-mcp-server", "2.1.0")
                 .capabilities(ServerCapabilities.builder()
                         .tools(false)
                         .build())
